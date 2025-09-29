@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Data Sensor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../frontend_css/datasensor.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+
+            <div class="nav-links">
+                <a href="dashboard.html"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="#" class="active"><i class="fas fa-table"></i> Data Sensor</a>
+                <a href="history.html"><i class="fas fa-history"></i> History</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label for="date-from">Từ ngày</label>
+            <input type="date" id="date-from">
+        </div>
+
+        <div class="filter-group">
+            <label for="date-to">Đến ngày</label>
+            <input type="date" id="date-to">
+        </div>
+
+        <div class="filter-group">
+            <label for="search">Tìm kiếm</label>
+            <input type="text" id="search" placeholder="Nhập từ khóa...">
+        </div>
+
+        <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="btn" id="apply-filters"><i class="fas fa-filter"></i> Áp dụng</button>
+        </div>
+
+        <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="btn" id="refresh-btn"><i class="fas fa-sync-alt"></i> Làm mới</button>
+        </div>
+
+    </div>
+
+    <div class="data-table-container">
+
+
+        <table id="main-table">
+            <thead>
+                <tr>
+                    <th data-sort="temperature">Nhiệt độ (°C) <i class="fas fa-sort"></i></th>
+                    <th data-sort="humidity">Độ ẩm (%) <i class="fas fa-sort"></i></th>
+                    <th data-sort="light">Ánh sáng (lux) <i class="fas fa-sort"></i></th>
+                    <th data-sort="timestamp">Thời gian <i class="fas fa-sort"></i></th>
+                </tr>
+            </thead>
+            <tbody id="sensor-data">
+                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+            </tbody>
+        </table>
+
+        <div class="no-data" id="no-data" style="display: none;">
+            <i class="fas fa-database" style="font-size: 48px; margin-bottom: 16px;"></i>
+            <p>Không có dữ liệu nào phù hợp với bộ lọc của bạn</p>
+        </div>
+    </div>
+
+    <div class="pagination" id="pagination-container">
+        <button id="first-page" disabled><i class="fas fa-angle-double-left"></i></button>
+        <button id="prev-page" disabled><i class="fas fa-angle-left"></i></button>
+
+        <div class="pagination-info">
+            Trang <span id="current-page">1</span> / <span id="total-pages">1</span>
+            <span class="data-count">(<span id="total-items">0</span> bản ghi)</span>
+        </div>
+
+        <button id="next-page" disabled><i class="fas fa-angle-right"></i></button>
+        <button id="last-page" disabled><i class="fas fa-angle-double-right"></i></button>
+
+        <div class="page-size-selector">
+            <label for="page-size">Hiển thị:</label>
+            <select id="page-size">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+
+    <script>
+        // Helper
+        const $ = (id) => document.getElementById(id);
+
+        // ===== Biến toàn cục =====
+        let groupedData = {};
+        let allData = [];
+        let currentPage = 1;
+        let pageSize = 10;
+        let sortField = 'timestamp';
+        let sortDirection = 'desc';
+        let currentFilters = {
+            dateFrom: '',
+            dateTo: '',
+            search: ''
+        };
+
+        // ===== Backend connection check =====
+        function checkBackendConnection() {
+            fetch('http://localhost:3000/api/health')
+                .then(res => res.ok ? console.log('Backend connected') : console.log('Backend returned error'))
+                .catch(err => console.error('Backend connection error:', err));
+        }
+
+        // ===== Fetch sensor data =====
+        async function fetchSensorData() {
+            try {
+                console.log('Fetching data from API...');
+                const response = await fetch('http://localhost:3000/api/sensor/data?limit=10000');
+                if (!response.ok) {
+                    console.error('Failed to fetch sensor data, status:', response.status);
+                    return;
+                }
+                const result = await response.json();
+                if (result.success) {
+                    groupedData = {};
+                    allData = processSensorData(result.data);
+                    renderData();
+                }
+            } catch (error) {
+                console.error('Error fetching sensor data:', error);
+            }
+        }
+
+        // ===== Process & group data =====
+        function normalizeTimestamp(value) {
+            try {
+                let d = typeof value === 'number' ? new Date(value) : new Date(value);
+                if (isNaN(d)) {
+                    d = new Date(String(value).replace(' ', 'T'));
+                }
+                if (isNaN(d)) d = new Date();
+                const pad = n => n.toString().padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            } catch {
+                const d = new Date();
+                const pad = n => n.toString().padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+        }
+
+        function processSensorData(rawData) {
+            rawData.forEach(item => {
+                const ts = normalizeTimestamp(item.timestamp);
+                if (!groupedData[ts]) groupedData[ts] = { id: ts, timestamp: ts, temperature: null, humidity: null, light: null, status: 'normal' };
+                if (item.sensor_name === 'temperature') groupedData[ts].temperature = item.value;
+                if (item.sensor_name === 'humidity') groupedData[ts].humidity = item.value;
+                if (item.sensor_name === 'light') groupedData[ts].light = item.value;
+                if (item.status === 'danger' || groupedData[ts].status === 'danger') groupedData[ts].status = 'danger';
+                else if (item.status === 'warning' && groupedData[ts].status !== 'danger') groupedData[ts].status = 'warning';
+            });
+            return Object.values(groupedData).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+
+        // ===== Render helpers =====
+        const formatDate = dateString => new Date(dateString).toLocaleString('vi-VN');
+
+        const formatSensorValue = (value, type) => {
+            if (value === null || value === undefined) return '<span class="sensor-value na">N/A</span>';
+            const cls = type === 'temperature' ? 'temp-value' : type === 'humidity' ? 'hum-value' : 'light-value';
+            return `<span class="sensor-value ${cls}">${value}</span>`;
+        };
+
+        const renderStatus = status => {
+            const text = status === 'normal' ? 'Bình thường' : status === 'warning' ? 'Cảnh báo' : 'Nguy hiểm';
+            const cls = status === 'normal' ? 'success' : status === 'warning' ? 'warning' : 'danger';
+            return `<span class="pill ${cls}">${text}</span>`;
+        };
+
+        const filterData = (data, filters) => data.filter(item => {
+            const itemDate = new Date(item.timestamp);
+            if (filters.dateFrom && itemDate < new Date(filters.dateFrom)) return false;
+            if (filters.dateTo && itemDate > new Date(filters.dateTo + ' 23:59:59')) return false;
+            if (filters.search) {
+                const term = filters.search.toLowerCase();
+                const match = (v) => v !== null && v.toString().toLowerCase().includes(term);
+
+                // Chuyển timestamp thành chuỗi để tìm kiếm partial match
+                const timestampStr = new Date(item.timestamp).toLocaleString('vi-VN').toLowerCase();
+
+                if (
+                    !match(item.temperature) &&
+                    !match(item.humidity) &&
+                    !match(item.light) &&
+                    !timestampStr.includes(term)
+                ) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        const sortData = (data, field, dir) => [...data].sort((a, b) => {
+            let va = a[field], vb = b[field];
+            if (field === 'timestamp') { va = new Date(va); vb = new Date(vb); }
+            else {
+                va = va === null ? (dir === 'asc' ? Infinity : -Infinity) : parseFloat(va);
+                vb = vb === null ? (dir === 'asc' ? Infinity : -Infinity) : parseFloat(vb);
+            }
+            return (va < vb) ? (dir === 'asc' ? -1 : 1) : (va > vb) ? (dir === 'asc' ? 1 : -1) : 0;
+        });
+
+        // ===== Render table =====
+        const renderData = () => {
+            const filtered = filterData(allData, currentFilters);
+            const sorted = sortData(filtered, sortField, sortDirection);
+
+            const sensorDataElem = $('sensor-data');
+            const noDataElem = $('no-data');
+            const totalPagesElem = $('total-pages');
+            const totalItemsElem = $('total-items');
+            const currentPageElem = $('current-page');
+
+            if (!sensorDataElem) return console.error('sensor-data element missing');
+
+            const totalPages = Math.ceil(sorted.length / pageSize) || 1;
+            if (totalPagesElem) totalPagesElem.textContent = totalPages;
+            if (totalItemsElem) totalItemsElem.textContent = sorted.length;
+            if (currentPageElem) currentPageElem.textContent = currentPage;
+
+            const first = $('first-page'), prev = $('prev-page'), next = $('next-page'), last = $('last-page');
+            if (first) first.disabled = currentPage === 1;
+            if (prev) prev.disabled = currentPage === 1;
+            if (next) next.disabled = currentPage === totalPages;
+            if (last) last.disabled = currentPage === totalPages;
+
+            if (sorted.length === 0) {
+                if (noDataElem) noDataElem.style.display = 'block';
+                sensorDataElem.innerHTML = '';
+                return;
+            } else if (noDataElem) noDataElem.style.display = 'none';
+
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, sorted.length);
+            const pageData = sorted.slice(start, end);
+
+            sensorDataElem.innerHTML = pageData.map(item => `
+            <tr>
+                <td>${formatSensorValue(item.temperature, 'temperature')}</td>
+                <td>${formatSensorValue(item.humidity, 'humidity')}</td>
+                <td>${formatSensorValue(item.light, 'light')}</td>
+                <td>${formatDate(item.timestamp)}</td>
+            </tr>
+        `).join('');
+        };
+
+        // ===== Setup pagination =====
+        const setupPagination = () => {
+            const first = $('first-page'), prev = $('prev-page'), next = $('next-page'), last = $('last-page'), pageSizeElem = $('page-size');
+            if (!first || !prev || !next || !last || !pageSizeElem) return console.warn('Pagination elements missing');
+
+            const updatePage = (newPage) => { currentPage = newPage; $('current-page').textContent = currentPage; renderData(); };
+
+            first.addEventListener('click', () => updatePage(1));
+            prev.addEventListener('click', () => currentPage > 1 && updatePage(currentPage - 1));
+            next.addEventListener('click', () => {
+                const total = Math.ceil(filterData(allData, currentFilters).length / pageSize);
+                if (currentPage < total) updatePage(currentPage + 1);
+            });
+            last.addEventListener('click', () => {
+                const total = Math.ceil(filterData(allData, currentFilters).length / pageSize);
+                updatePage(total);
+            });
+            pageSizeElem.addEventListener('change', e => { pageSize = parseInt(e.target.value); updatePage(1); });
+        };
+
+        // ===== Setup sorting =====
+        const setupSorting = () => {
+            const headers = document.querySelectorAll('th[data-sort]');
+            if (!headers.length) return console.warn('No sortable headers');
+            headers.forEach(th => {
+                th.addEventListener('click', () => {
+                    const field = th.getAttribute('data-sort');
+                    if (sortField === field) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    else { sortField = field; sortDirection = 'asc'; }
+                    document.querySelectorAll('th i').forEach(icon => icon.className = 'fas fa-sort');
+                    const icon = th.querySelector('i');
+                    if (icon) icon.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                    renderData();
+                });
+            });
+        };
+
+        // ===== Setup filters & refresh =====
+        const setupFilters = () => {
+            const dateFrom = $('date-from'), dateTo = $('date-to'), search = $('search');
+            const applyBtn = $('apply-filters'), refreshBtn = $('refresh-btn'), exportBtn = $('export-btn');
+
+            const applyHandler = () => {
+                currentFilters = { dateFrom: dateFrom ? dateFrom.value : '', dateTo: dateTo ? dateTo.value : '', search: search ? search.value : '' };
+                currentPage = 1; if ($('current-page')) $('current-page').textContent = currentPage;
+                renderData();
+            };
+
+            //if (dateFrom) dateFrom.addEventListener('change', applyHandler);
+            //if (dateTo) dateTo.addEventListener('change', applyHandler);
+            //if (search) search.addEventListener('input', applyHandler);
+            if (applyBtn) applyBtn.addEventListener('click', applyHandler);
+
+            if (refreshBtn) refreshBtn.addEventListener('click', () => {
+                const today = new Date();
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(today.getDate() - 7);
+
+                // Ngày mai để bao trọn hôm nay
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+
+                function toLocalDateInputValue(date) {
+                    const local = new Date(date);
+                    local.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                    return local.toISOString().slice(0, 10);
+                }
+
+                // Reset input filter
+                if (dateFrom) dateFrom.value = toLocalDateInputValue(oneWeekAgo);
+                if (dateTo) dateTo.value = toLocalDateInputValue(today);
+                if (search) search.value = '';
+
+                // Reset bộ lọc
+                currentFilters = {
+                    dateFrom: toLocalDateInputValue(oneWeekAgo),
+                    dateTo: toLocalDateInputValue(tomorrow), // +1 ngày để bao hôm nay
+                    search: ''
+                };
+
+                // Reset sort & trang
+                sortField = 'timestamp';
+                sortDirection = 'desc';
+                currentPage = 1;
+                if ($('current-page')) $('current-page').textContent = currentPage;
+
+                // Reset icon sort
+                document.querySelectorAll('th i').forEach(icon => icon.className = 'fas fa-sort');
+                const tsIcon = document.querySelector('th[data-sort="timestamp"] i');
+                if (tsIcon) tsIcon.className = 'fas fa-sort-down';
+
+                fetchSensorData();
+            });
+        };
+
+        // ===== Setup theme toggle =====
+        const setupThemeToggle = () => {
+            const themeToggle = $('themeToggle'); if (!themeToggle) return;
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') { document.body.classList.add('dark-mode'); themeToggle.innerHTML = '<i class="fas fa-sun"></i>'; }
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                if (document.body.classList.contains('dark-mode')) { themeToggle.innerHTML = '<i class="fas fa-sun"></i>'; localStorage.setItem('theme', 'dark'); }
+                else { themeToggle.innerHTML = '<i class="fas fa-moon"></i>'; localStorage.setItem('theme', 'light'); }
+            });
+        };
+
+        // ===== Initialize =====
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing app');
+
+            const today = new Date();
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(today.getDate() - 7);
+
+            // Ngày ngày mai để filter bao trọn hôm nay
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+
+            function toLocalDateInputValue(date) {
+                const local = new Date(date);
+                local.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                return local.toISOString().slice(0, 10);
+            }
+
+            if ($('date-from') && $('date-to')) {
+                $('date-from').value = toLocalDateInputValue(oneWeekAgo);
+                $('date-to').value = toLocalDateInputValue(today);
+                currentFilters = {
+                    dateFrom: toLocalDateInputValue(oneWeekAgo),
+                    dateTo: toLocalDateInputValue(tomorrow), // bao trọn hôm nay
+                    search: ''
+                };
+            }
+
+
+
+            setupPagination();
+            setupSorting();
+            setupFilters();
+            setupThemeToggle();
+
+            checkBackendConnection();
+            setInterval(checkBackendConnection, 10000);
+
+            fetchSensorData();
+            setInterval(fetchSensorData, 900000); // 15 phút
+        });
+    </script>
+
+</body>
+
+</html>

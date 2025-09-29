@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <title>ESP8266 Control Panel</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../frontend_css/dashboard.css">
+
+
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <div class="nav-links">
+                <a href="dashboard.html"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="datasensor.html"><i class="fas fa-table"></i> Data Sensor</a>
+                <a href="history.html"><i class="fas fa-history"></i> History</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="dashboard">
+            <!-- Hàng 1: Sensor Data -->
+            <div class="row-1">
+                <div class="card sensor-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="fas fa-thermometer-half"></i> Sensor Data</h2>
+                    </div>
+                    <div class="sensor-grid">
+                        <!-- Sensor: Temperature -->
+                        <div class="sensor-item" id="temp-sensor" onclick="showChart('temp')">
+                            <div class="sensor-icon"><i class="fas fa-temperature-high"></i></div>
+                            <div class="sensor-value" id="temp">—</div>
+                            <div class="sensor-label">Temperature (°C)</div>
+                        </div>
+                        <!-- Sensor: Humidity -->
+                        <div class="sensor-item" id="hum-sensor" onclick="showChart('hum')">
+                            <div class="sensor-icon"><i class="fas fa-tint"></i></div>
+                            <div class="sensor-value" id="hum">—</div>
+                            <div class="sensor-label">Humidity (%)</div>
+                        </div>
+                        <!-- Sensor: Light -->
+                        <div class="sensor-item" id="light-sensor" onclick="showChart('light')">
+                            <div class="sensor-icon"><i class="fas fa-sun"></i></div>
+                            <div class="sensor-value" id="light">—</div>
+                            <div class="sensor-label">Light (0–1023)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hàng 2: Sensor Charts + Device Control -->
+            <div class="row-2">
+                <!-- Sensor Charts -->
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="fas fa-chart-line"></i> Sensor Charts</h2>
+                    </div>
+                    <div class="chart-grid">
+                        <div class="chart-wrapper" id="chartTempContainer">
+                            <canvas id="chartTemp"></canvas>
+                        </div>
+                        <div class="chart-wrapper" id="chartHumContainer" style="display: none;">
+                            <canvas id="chartHum"></canvas>
+                        </div>
+                        <div class="chart-wrapper" id="chartLightContainer" style="display: none;">
+                            <canvas id="chartLight"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device Control -->
+                <div class="card device-card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="fas fa-sliders-h"></i> Device Control</h2>
+                    </div>
+                    <div class="device-grid">
+                        <!-- Device: LED 1 -->
+                        <div class="device-item">
+                            <div class="device-info">
+                                <div class="device-icon led" id="icon-led1">
+                                    <i class="fas fa-lightbulb" style="color: rgb(125, 241, 125);"></i>
+                                </div>
+                                <span class="device-name">LED 1</span>
+                            </div>
+                            <span class="device-status" id="s-led1">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-led1" onchange="toggleDevice('led1')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Device: LED 2 -->
+                        <div class="device-item">
+                            <div class="device-info">
+                                <div class="device-icon led" id="icon-led2">
+                                    <i class="fas fa-lightbulb" style="color: rgb(236, 85, 25);"></i>
+                                </div>
+                                <span class="device-name">LED 2</span>
+                            </div>
+                            <span class="device-status" id="s-led2">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-led2" onchange="toggleDevice('led2')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Device: LED 3 -->
+                        <div class="device-item">
+                            <div class="device-info">
+                                <div class="device-icon led" id="icon-led3">
+                                    <i class="fas fa-lightbulb" style="color: rgb(244, 248, 15);"></i>
+                                </div>
+                                <span class="device-name">LED 3</span>
+                            </div>
+                            <span class="device-status" id="s-led3">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-led3" onchange="toggleDevice('led3')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Device: FAN -->
+                        <div class="device-item">
+                            <div class="device-info">
+                                <div class="device-icon fan" id="icon-fan">
+                                    <i class="fas fa-fan" style="color: blue;"></i>
+                                </div>
+                                <span class="device-name">FAN</span>
+                            </div>
+                            <span class="device-status" id="s-fan">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-fan" onchange="toggleDevice('fan')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Device: AC -->
+                        <div class="device-item">
+                            <div class="device-info">
+                                <div class="device-icon ac" id="icon-ac">
+                                    <i class="fas fa-wind" style="color: teal;"></i>
+                                </div>
+                                <span class="device-name">AC</span>
+                            </div>
+                            <span class="device-status" id="s-ac">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-ac" onchange="toggleDevice('ac')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Các hàm utility
+        const $ = id => document.getElementById(id);
+
+        let pendingDevices = {}; // Lưu trạng thái đang chờ backend confirm
+        let currentChart = 'temp'; // Biểu đồ hiện tại đang hiển thị
+
+        // Ngưỡng cảnh báo cho các cảm biến
+        const WARNING_THRESHOLDS = {
+            temp: { warning: 30, critical: 35 },
+            hum: { warning: 70, critical: 85 },
+            light: { warning: 800, critical: 950 }
+        };
+
+        // Hàm cập nhật hiệu ứng cảnh báo cho sensor
+        function updateSensorWarning(sensorType, value) {
+            const sensorElement = $(`${sensorType}-sensor`);
+            const thresholds = WARNING_THRESHOLDS[sensorType];
+
+            // Xóa tất cả các lớp cảnh báo trước
+            sensorElement.classList.remove('warning', 'critical');
+
+            // Kiểm tra và thêm lớp cảnh báo phù hợp
+            if (value >= thresholds.critical) {
+                sensorElement.classList.add('critical');
+            } else if (value >= thresholds.warning) {
+                sensorElement.classList.add('warning');
+            }
+        }
+
+        function log(msg, isError = false) {
+            const box = $("log");
+            const ts = new Date().toLocaleTimeString();
+            const entry = document.createElement("div");
+            entry.className = "log-entry";
+            entry.innerHTML = `<span class="log-time">[${ts}]</span> <span class="log-message">${msg}</span>`;
+
+            if (isError) {
+                entry.querySelector('.log-message').style.color = '#e74c3c';
+            }
+
+            box.appendChild(entry);
+            box.scrollTop = box.scrollHeight;
+            sessionStorage.setItem('dashboardLogs', box.innerHTML);
+        }
+
+        // Hàm cập nhật trạng thái thiết bị (text, công tắc và icon)
+        function setDeviceStatus(deviceId, isOn) {
+            const statusEl = $(`s-${deviceId}`);
+            const toggleEl = $(`toggle-${deviceId}`);
+            const iconEl = $(`icon-${deviceId}`);
+
+            // Cập nhật text status
+            statusEl.textContent = isOn ? "ON" : "OFF";
+            statusEl.classList.toggle("on", isOn);
+
+            // Cập nhật công tắc
+            toggleEl.checked = isOn;
+
+            // Cập nhật icon
+            if (isOn) {
+                iconEl.classList.add("active");
+            } else {
+                iconEl.classList.remove("active");
+            }
+
+            // Lưu trạng thái vào sessionStorage
+            const savedDevices = JSON.parse(sessionStorage.getItem('deviceStates') || '{}');
+            savedDevices[deviceId] = isOn;
+            sessionStorage.setItem('deviceStates', JSON.stringify(savedDevices));
+        }
+
+        // Hàm kiểm tra kết nối backend
+        function checkBackendConnection() {
+            fetch('http://localhost:3000/api/health')
+                .then(response => {
+                    if (response.ok) {
+                        $('#backendStatusDot').className = 'status-dot connected';
+                        $('#backendStatusText').textContent = 'Backend Connected';
+                    } else {
+                        $('#backendStatusDot').className = 'status-dot';
+                        $('#backendStatusText').textContent = 'Backend Error';
+                    }
+                })
+                .catch(error => {
+                    $('#backendStatusDot').className = 'status-dot';
+                    $('#backendStatusText').textContent = 'Backend Unreachable';
+                    log('Backend connection error: ' + error, true);
+                });
+        }
+
+        // Hàm gửi lệnh điều khiển
+        function send(which, payload) {
+            pendingDevices[which] = payload.toUpperCase();
+
+            fetch('http://localhost:3000/api/control/device', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device: which, action: payload })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        log(`Command sent to ${which}: ${payload}`);
+                    } else {
+                        log(`Failed to send command: ${data.message || data.error}`, true);
+                        // Khôi phục trạng thái trước đó nếu có lỗi
+                        const currentState = $(`s-${which}`).textContent.trim().toUpperCase() === 'ON';
+                        setDeviceStatus(which, currentState);
+                        delete pendingDevices[which];
+                    }
+                })
+                .catch(err => {
+                    log(`Error sending command: ${err}`, true);
+                    // Khôi phục trạng thái trước đó nếu có lỗi
+                    const currentState = $(`s-${which}`).textContent.trim().toUpperCase() === 'ON';
+                    setDeviceStatus(which, currentState);
+                    delete pendingDevices[which];
+                });
+        }
+
+        // Hàm xử lý khi người dùng bật/tắt công tắc
+        function toggleDevice(which) {
+            const toggleEl = $(`toggle-${which}`);
+            const nextState = toggleEl.checked;
+
+            // Cập nhật giao diện ngay lập tức
+            setDeviceStatus(which, nextState);
+
+            // Gửi lệnh đến backend
+            send(which, nextState ? 'ON' : 'OFF');
+        }
+
+        // Biểu đồ với gradient nhiều màu
+        const maxPoints = 20;
+
+        function createMultiColorGradient(ctx, chartType) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+
+            if (chartType === 'temp') {
+                // Gradient từ xanh dương (lạnh) đến đỏ (nóng)
+                gradient.addColorStop(0, 'rgba(255, 0, 0, 0.8)');      // Đỏ
+                gradient.addColorStop(0.5, 'rgba(255, 165, 0, 0.6)');  // Cam
+                gradient.addColorStop(1, 'rgba(0, 0, 255, 0.4)');      // Xanh dương
+            } else if (chartType === 'hum') {
+                // Gradient từ xanh lá (khô) đến xanh dương (ẩm)
+                gradient.addColorStop(0, 'rgba(0, 128, 0, 0.8)');      // Xanh lá
+                gradient.addColorStop(0.5, 'rgba(0, 255, 255, 0.6)');  // Xanh lơ
+                gradient.addColorStop(1, 'rgba(0, 0, 255, 0.4)');      // Xanh dương
+            } else if (chartType === 'light') {
+                // Gradient từ vàng (sáng) đến tím (tối)
+                gradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');    // Vàng
+                gradient.addColorStop(0.5, 'rgba(255, 165, 0, 0.6)');  // Cam
+                gradient.addColorStop(1, 'rgba(128, 0, 128, 0.4)');    // Tím
+            }
+
+            return gradient;
+        }
+
+        function createLineChart(canvas, label, chartType) {
+            const ctx = canvas.getContext('2d');
+            const gradient = createMultiColorGradient(ctx, chartType);
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label,
+                        data: [],
+                        borderColor: gradient,
+                        backgroundColor: function (context) {
+                            const chart = context.chart;
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return null;
+                            return createMultiColorGradient(ctx, chartType);
+                        },
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: gradient,
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: getComputedStyle(document.body).getPropertyValue('--text'),
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8,
+                            padding: 10,
+                            enabled: true,
+                            animation: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return `${label}: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    hover: {
+                        animationDuration: 0
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.body).getPropertyValue('--text'),
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 6
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.body).getPropertyValue('--text'),
+                                stepSize: 0.1
+                            }
+                        }
+                    }
+                },
+                // THÊM PHẦN NÀY Ở NGOÀI options
+                plugins: [{
+                    id: 'lastValuePlugin',
+                    afterDraw: function (chart) {
+                        const ctx = chart.ctx;
+                        const dataset = chart.data.datasets[0];
+                        const lastIndex = dataset.data.length - 1;
+
+                        if (lastIndex >= 0) {
+                            const lastValue = dataset.data[lastIndex];
+                            const meta = chart.getDatasetMeta(0);
+                            const lastPoint = meta.data[lastIndex];
+
+                            ctx.save();
+                            ctx.fillStyle = dataset.borderColor;
+                            ctx.font = 'bold 12px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+
+
+                            // Hiển thị giá trị phía trên điểm, dịch sang trái 5px
+                            ctx.fillText(lastValue, lastPoint.x - 5, lastPoint.y - 10);
+                            ctx.restore();
+                        }
+                    }
+                }]
+            });
+        }
+
+        const chartTemp = createLineChart($("chartTemp"), "Temperature (°C)", "temp");
+        const chartHum = createLineChart($("chartHum"), "Humidity (%)", "hum");
+        const chartLight = createLineChart($("chartLight"), "Light", "light");
+
+        function updateChartColors(chart, chartType) {
+            const textColor = getComputedStyle(document.body).getPropertyValue('--text');
+            const ctx = chart.ctx;
+
+            // Cập nhật gradient với màu mới
+            chart.data.datasets[0].borderColor = createMultiColorGradient(ctx, chartType);
+            chart.data.datasets[0].backgroundColor = createMultiColorGradient(ctx, chartType);
+
+            // Cập nhật màu chữ
+            chart.options.plugins.legend.labels.color = textColor;
+            chart.options.scales.x.ticks.color = textColor;
+            chart.options.scales.y.ticks.color = textColor;
+
+            chart.update();
+        }
+
+        // Hàm hiển thị biểu đồ được chọn
+        function showChart(chartType) {
+            // Ẩn tất cả các biểu đồ
+            $("chartTempContainer").style.display = 'none';
+            $("chartHumContainer").style.display = 'none';
+            $("chartLightContainer").style.display = 'none';
+
+            // Hiển thị biểu đồ được chọn
+            $(`chart${chartType.charAt(0).toUpperCase() + chartType.slice(1)}Container`).style.display = 'block';
+
+            // Cập nhật biểu đồ hiện tại
+            currentChart = chartType;
+
+            // Cập nhật màu sắc cho biểu đồ
+            if (chartType === 'temp') updateChartColors(chartTemp, 'temp');
+            if (chartType === 'hum') updateChartColors(chartHum, 'hum');
+            if (chartType === 'light') updateChartColors(chartLight, 'light');
+        }
+
+        // Load dữ liệu chart từ sessionStorage nếu có
+        const savedData = sessionStorage.getItem('sensorCharts');
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            if (parsed.chartTemp) { chartTemp.data = parsed.chartTemp; chartTemp.update(); }
+            if (parsed.chartHum) { chartHum.data = parsed.chartHum; chartHum.update(); }
+            if (parsed.chartLight) { chartLight.data = parsed.chartLight; chartLight.update(); }
+        }
+
+        // Load giá trị sensor từ sessionStorage nếu có
+        const savedSensorData = sessionStorage.getItem('sensorValues');
+        if (savedSensorData) {
+            const parsed = JSON.parse(savedSensorData);
+            if (parsed.temp) {
+                $("temp").textContent = parsed.temp;
+                updateSensorWarning('temp', parseFloat(parsed.temp));
+            }
+            if (parsed.hum) {
+                $("hum").textContent = parsed.hum;
+                updateSensorWarning('hum', parseFloat(parsed.hum));
+            }
+            if (parsed.light) {
+                $("light").textContent = parsed.light;
+                updateSensorWarning('light', parseFloat(parsed.light));
+            }
+        }
+
+        function updateChart(chart, value) {
+            const time = new Date().toLocaleTimeString();
+            chart.data.labels.push(time);
+            chart.data.datasets[0].data.push(value);
+            if (chart.data.labels.length > maxPoints) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            chart.update('none');
+        }
+
+        // Lưu dữ liệu chart vào sessionStorage mỗi khi có update
+        function saveChartData() {
+            const data = {
+                chartTemp: chartTemp.data,
+                chartHum: chartHum.data,
+                chartLight: chartLight.data
+            };
+            sessionStorage.setItem('sensorCharts', JSON.stringify(data));
+        }
+
+        function saveSensorValues() {
+            const data = {
+                temp: $("temp").textContent,
+                hum: $("hum").textContent,
+                light: $("light").textContent
+            };
+            sessionStorage.setItem('sensorValues', JSON.stringify(data));
+        }
+
+        // Gọi saveChartData sau mỗi lần updateChart
+        const originalUpdateChart = updateChart;
+        updateChart = function (chart, value) {
+            originalUpdateChart(chart, value);
+            saveChartData();
+            saveSensorValues();
+        };
+
+        // Kết nối WebSocket để nhận dữ liệu real-time từ backend
+        function connectToBackendWebSocket() {
+            const ws = new WebSocket('ws://localhost:3000');
+
+            ws.onopen = function () {
+                log('Connected to backend WebSocket');
+            };
+
+            ws.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'sensor_data') {
+                    if (data.sensor === 'temp') {
+                        $("temp").textContent = data.value;
+                        updateChart(chartTemp, parseFloat(data.value));
+                        updateSensorWarning('temp', parseFloat(data.value));
+                    } else if (data.sensor === 'hum' || data.sensor === 'humidity' || data.sensor === 'Độ ẩm') {
+                        $("hum").textContent = data.value;
+                        updateChart(chartHum, parseFloat(data.value));
+                        updateSensorWarning('hum', parseFloat(data.value));
+                    } else if (data.sensor === 'light') {
+                        $("light").textContent = data.value;
+                        updateChart(chartLight, parseFloat(data.value));
+                        updateSensorWarning('light', parseFloat(data.value));
+                    }
+                    log(`Sensor update: ${data.sensor} = ${data.value}`);
+                } else if (data.type === 'device_state') {
+                    const pending = pendingDevices[data.device];
+                    if (!pending || pending.toLowerCase() === data.state.toLowerCase()) {
+                        setDeviceStatus(data.device, data.state === 'on');
+                        delete pendingDevices[data.device];
+                    } else {
+                        log(`Device state mismatch: ${data.device} backend=${data.state} pending=${pending}`, true);
+                    }
+                }
+            };
+
+            ws.onerror = function (error) {
+                log('WebSocket error: ' + error, true);
+            };
+
+            ws.onclose = function () {
+                log('WebSocket connection closed. Reconnecting in 3 seconds...', true);
+                setTimeout(connectToBackendWebSocket, 3000);
+            };
+        }
+
+        $("themeToggle").addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            const icon = $("themeToggle").querySelector("i");
+            icon.className = document.body.classList.contains("dark-mode") ? "fas fa-sun" : "fas fa-moon";
+            log(document.body.classList.contains("dark-mode") ? "Switched to dark mode" : "Switched to light mode");
+
+            // Cập nhật màu sắc cho biểu đồ hiện tại
+            if (currentChart === 'temp') updateChartColors(chartTemp, 'temp');
+            if (currentChart === 'hum') updateChartColors(chartHum, 'hum');
+            if (currentChart === 'light') updateChartColors(chartLight, 'light');
+        });
+
+        // Load trạng thái device từ sessionStorage
+        const savedDevices = JSON.parse(sessionStorage.getItem('deviceStates') || '{}');
+        for (const id in savedDevices) {
+            setDeviceStatus(id, savedDevices[id]);
+        }
+
+        // Khởi tạo
+        checkBackendConnection();
+        setInterval(checkBackendConnection, 10000);
+        connectToBackendWebSocket();
+
+        log("Dashboard initialized. Connecting to backend...");
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,390 @@
+openapi: 3.0.3
+info:
+  title: IoT Control Panel API
+  version: 1.0.0
+  description: >
+    API cho hệ thống IoT (thiết bị + cảm biến).  
+    Bao gồm quản lý thiết bị, dữ liệu cảm biến, lịch sử điều khiển, MQTT và WebSocket.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  #####################################
+  # Health & Info API
+  #####################################
+  /api/health/health:
+    get:
+      summary: Health check server
+      description: Kiểm tra trạng thái server có hoạt động bình thường không.
+      responses:
+        '200':
+          description: Server đang chạy
+          content:
+            application/json:
+              example:
+                success: true
+                message: "Server đang chạy"
+                timestamp: "2025-09-29T07:45:00.000Z"
+                status: "OK"
+
+  /api/health/info:
+    get:
+      summary: System info
+      description: Lấy thông tin hệ thống (phiên bản, uptime, memory, environment).
+      responses:
+        '200':
+          description: Thông tin hệ thống
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  version: "1.0.0"
+                  uptime: 3600.45
+                  memory:
+                    rss: 33292288
+                    heapTotal: 7159808
+                    heapUsed: 4893792
+                  environment: "development"
+
+  #####################################
+  # Sensor API
+  #####################################
+  /api/sensor/data:
+    get:
+      summary: Lấy dữ liệu sensor (phân trang + lọc)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+          example: 2
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+          example: 5
+        - in: query
+          name: deviceId
+          schema: { type: string }
+          example: "esp8266-001"
+        - in: query
+          name: sensorType
+          schema: { type: string, enum: [temperature, humidity, light] }
+          example: "temperature"
+        - in: query
+          name: startDate
+          schema: { type: string, format: date-time }
+          example: "2025-09-28T00:00:00Z"
+        - in: query
+          name: endDate
+          schema: { type: string, format: date-time }
+          example: "2025-09-29T23:59:59Z"
+      responses:
+        '200':
+          description: Dữ liệu sensor trả về
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  items:
+                    - deviceId: "esp8266-001"
+                      sensorType: "temperature"
+                      value: 28.5
+                      timestamp: "2025-09-29T12:00:00Z"
+                    - deviceId: "esp8266-001"
+                      sensorType: "temperature"
+                      value: 29.2
+                      timestamp: "2025-09-29T12:05:00Z"
+                  pagination:
+                    page: 2
+                    limit: 5
+                    totalPages: 10
+
+  /api/sensor/data/latest:
+    get:
+      summary: Lấy dữ liệu sensor mới nhất
+      responses:
+        '200':
+          description: Sensor mới nhất
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  deviceId: "esp8266-002"
+                  sensorType: "humidity"
+                  value: 75
+                  timestamp: "2025-09-29T12:34:56Z"
+
+  /api/sensor/stats:
+    get:
+      summary: Lấy thống kê dữ liệu sensor
+      responses:
+        '200':
+          description: Thống kê (ví dụ max/min/avg)
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  temperature:
+                    avg: 26.7
+                    min: 22.0
+                    max: 30.5
+                  humidity:
+                    avg: 65
+                    min: 40
+                    max: 85
+                  light:
+                    avg: 1200
+                    min: 500
+                    max: 1800
+
+  /api/sensor/data/device/{deviceId}:
+    get:
+      summary: Lấy dữ liệu sensor của 1 thiết bị
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema: { type: string }
+          example: "esp8266-001"
+      responses:
+        '200':
+          description: Dữ liệu sensor của thiết bị
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  - sensorType: "temperature"
+                    value: 29
+                    timestamp: "2025-09-29T12:30:00Z"
+                  - sensorType: "humidity"
+                    value: 70
+                    timestamp: "2025-09-29T12:30:00Z"
+
+  /api/sensor/data/clear:
+    delete:
+      summary: Xóa toàn bộ dữ liệu sensor (admin)
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              example:
+                success: true
+                message: "All sensor data cleared"
+
+  #####################################
+  # History API
+  #####################################
+  /api/history/control:
+    get:
+      summary: Lấy lịch sử điều khiển thiết bị
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+          example: 1
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+          example: 5
+        - in: query
+          name: deviceId
+          schema: { type: string }
+          example: "esp8266-001"
+        - in: query
+          name: action
+          schema: { type: string, enum: [ON, OFF, TOGGLE] }
+          example: "ON"
+        - in: query
+          name: startDate
+          schema: { type: string, format: date-time }
+          example: "2025-09-28T00:00:00Z"
+        - in: query
+          name: endDate
+          schema: { type: string, format: date-time }
+          example: "2025-09-29T23:59:59Z"
+      responses:
+        '200':
+          description: Lịch sử điều khiển
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  items:
+                    - deviceId: "esp8266-001"
+                      action: "ON"
+                      source: "web"
+                      timestamp: "2025-09-29T12:40:00Z"
+                    - deviceId: "esp8266-001"
+                      action: "OFF"
+                      source: "mqtt"
+                      timestamp: "2025-09-29T13:00:00Z"
+                  pagination:
+                    page: 1
+                    limit: 5
+                    totalPages: 3
+
+  /api/history/control/clear:
+    delete:
+      summary: Xóa toàn bộ lịch sử điều khiển
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              example:
+                success: true
+                message: "All control history cleared"
+
+  /api/history/stats:
+    get:
+      summary: Thống kê lịch sử điều khiển
+      responses:
+        '200':
+          description: Thống kê (ví dụ số lần ON/OFF)
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  totalCommands: 50
+                  byAction:
+                    ON: 30
+                    OFF: 15
+                    TOGGLE: 5
+
+  #####################################
+  # Control API
+  #####################################
+  /api/control/device:
+    post:
+      summary: Gửi lệnh điều khiển thiết bị
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device:
+                  type: string
+                action:
+                  type: string
+                  enum: [ON, OFF, TOGGLE]
+            example:
+              device: "esp8266-001"
+              action: "ON"
+      responses:
+        '200':
+          description: Lệnh đã gửi thành công
+          content:
+            application/json:
+              example:
+                success: true
+                message: "Command sent successfully"
+                data:
+                  device: "esp8266-001"
+                  action: "ON"
+                  timestamp: "2025-09-29T12:34:56Z"
+
+  /api/control/devices:
+    get:
+      summary: Lấy danh sách tất cả thiết bị
+      responses:
+        '200':
+          description: Danh sách thiết bị
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  - deviceId: "esp8266-001"
+                    name: "Đèn phòng khách"
+                    type: "actuator"
+                    status: 
+                      online: true
+                      lastSeen: "2025-09-29T12:40:00Z"
+                  - deviceId: "esp8266-002"
+                    name: "Cảm biến nhiệt độ"
+                    type: "sensor"
+                    status:
+                      online: false
+                      lastSeen: "2025-09-28T22:10:00Z"
+
+  /api/control/device/{deviceId}/status:
+    get:
+      summary: Lấy trạng thái của 1 thiết bị
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema: { type: string }
+          example: "esp8266-001"
+      responses:
+        '200':
+          description: Trạng thái thiết bị
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  deviceId: "esp8266-001"
+                  status: "ON"
+
+  /api/control/device/{deviceId}:
+    put:
+      summary: Cập nhật thông tin thiết bị
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema: { type: string }
+          example: "esp8266-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Đèn ngủ"
+              location: "Phòng ngủ"
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              example:
+                success: true
+                message: "Device updated"
+                data:
+                  deviceId: "esp8266-001"
+                  name: "Đèn ngủ"
+                  location: "Phòng ngủ"
+
+  /api/control/device/{deviceId}/history:
+    get:
+      summary: Lấy lịch sử điều khiển của 1 thiết bị
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema: { type: string }
+          example: "esp8266-001"
+      responses:
+        '200':
+          description: Lịch sử điều khiển của thiết bị
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  - action: "ON"
+                    timestamp: "2025-09-29T12:40:00Z"
+                  - action: "OFF"
+                    timestamp: "2025-09-29T13:00:00Z"

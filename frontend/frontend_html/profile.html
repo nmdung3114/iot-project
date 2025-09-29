@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Cá nhân - IoT Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../frontend_css/profile.css">
+
+</head>
+
+<body>
+    <div class="profile-header-container">
+        <div class="nav-header">
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="datasensor.html" class="nav-link"><i class="fas fa-table"></i> Data Sensor</a>
+                <a href="history.html" class="nav-link"><i class="fas fa-history"></i> History</a>
+                <a href="profile.html" class="nav-link active"><i class="fas fa-user"></i> Profile</a>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-image-container">
+                <div class="profile-image">
+                    <img src="https://placehold.co/200x200/4361ee/ffffff?text=Ảnh" alt="Profile Image" id="profile-img">
+                    <label for="upload-img" class="upload-btn">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="upload-img" accept="image/*" style="display: none;">
+
+                </div>
+                <!-- Các thiết bị IoT xoay quanh -->
+                <div class="iot-device device-1">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="iot-device device-2">
+                    <i class="fas fa-sensor"></i>
+                </div>
+                <div class="iot-device device-3">
+                    <i class="fas fa-wifi"></i>
+                </div>
+                <div class="iot-device device-4">
+                    <i class="fas fa-bluetooth"></i>
+                </div>
+
+            </div>
+            <h1 class="profile-name">Nguyễn Mạnh Dũng</h1>
+            <p class="student-id">Mã sinh viên: B22DCCN132</p>
+
+        </div>
+
+        <div class="profile-info">
+            <div class="info-card">
+                <h2><i class="fas fa-info-circle"></i> Thông tin cá nhân</h2>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-envelope"></i> Email:</span>
+                    <span class="info-value">manhdung2724@gmail.com</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-phone"></i> Số điện thoại:</span>
+                    <span class="info-value">0325 445 772</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-graduation-cap"></i> Chuyên ngành:</span>
+                    <span class="info-value">Công nghệ thông tin</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-school"></i> Trường:</span>
+                    <span class="info-value">Học viện Công nghệ Bưu chính Viễn thông</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-map-marker-alt"></i> Địa chỉ:</span>
+                    <span class="info-value">Hà Nội, Việt Nam</span>
+                </div>
+            </div>
+
+            <div class="links-card">
+                <h2><i class="fas fa-link"></i> Liên kết</h2>
+                <div class="link-item">
+                    <a href="https://github.com/nyagami/Python-PTIT" target="_blank" class="link-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+                <div class="link-item">
+                    <a href="https://blue-comet-4391478.postman.co/workspace/Nguy%E1%BB%85n-M%E1%BA%A1nh-D%C5%A9ng's-Workspace~d853efde-0503-49df-8450-0e75dc7e8bcd/collection/45032837-03b16997-7beb-4842-8e73-4470e4ab290b?action=share&creator=45032837" target="_blank"
+                        class="link-btn postman">
+                        <i class="fas fa-book"></i> API Documentation
+                    </a>
+                </div>
+                <div class="link-item">
+                    <a href="path/to/your/file.pdf" target="_blank" class="link-btn pdf">
+                        <i class="fas fa-file-pdf"></i> File PDF
+                    </a>
+                </div>
+                <div class="link-item">
+                    <button id="reset-photo" class="link-btn reset">
+                        <i class="fas fa-undo"></i> Đặt lại ảnh mặc định
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thay thế phần thống kê bằng các liên kết mạng xã hội -->
+        <div class="social-links">
+            <a href="https://www.facebook.com/nguyen.manh.dung.283177" target="_blank" class="social-card facebook">
+                <div class="social-icon">
+                    <i class="fab fa-facebook"></i>
+                </div>
+                <div class="social-label">Facebook</div>
+            </a>
+
+            <a href="mailto:manhdung2724@gmail.com" class="social-card gmail">
+                <div class="social-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="social-label">Gmail</div>
+            </a>
+
+            <a href="https://outlook.live.com/" target="_blank" class="social-card outlook">
+                <div class="social-icon">
+                    <i class="fas fa-envelope-open-text"></i>
+                </div>
+                <div class="social-label">Outlook</div>
+            </a>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Ảnh đã được lưu thành công!</span>
+    </div>
+
+    <script>
+        // Lấy các phần tử DOM cần thiết
+        const profileImg = document.getElementById('profile-img');
+        const uploadInput = document.getElementById('upload-img');
+        const resetButton = document.getElementById('reset-photo');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // Khóa lưu trữ cho localStorage
+        const STORAGE_KEY = 'profileImageData';
+        const THEME_KEY = 'profileTheme';
+
+        // Hiển thị thông báo
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Lưu ảnh vào localStorage
+        function saveImageToStorage(imageData) {
+            try {
+                localStorage.setItem(STORAGE_KEY, imageData);
+                showToast('Ảnh đã được lưu thành công!');
+            } catch (e) {
+                console.error('Lỗi khi lưu ảnh:', e);
+                showToast('Lỗi khi lưu ảnh!');
+            }
+        }
+
+        // Lấy ảnh từ localStorage
+        function getImageFromStorage() {
+            return localStorage.getItem(STORAGE_KEY);
+        }
+
+        // Xóa ảnh từ localStorage
+        function removeImageFromStorage() {
+            localStorage.removeItem(STORAGE_KEY);
+            showToast('Đã khôi phục ảnh mặc định!');
+        }
+
+        // Chuyển đổi chế độ sáng/tối
+        function toggleTheme() {
+            body.classList.toggle('dark-mode');
+            const isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem(THEME_KEY, isDarkMode);
+
+            // Thay đổi icon
+            const icon = themeToggle.querySelector('i');
+            if (isDarkMode) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+
+        // Kiểm tra và tải ảnh từ localStorage khi trang được tải
+        document.addEventListener('DOMContentLoaded', function () {
+            const savedImageData = getImageFromStorage();
+            const defaultImage = 'https://placehold.co/200x200/4361ee/ffffff?text=Ảnh';
+
+            if (savedImageData) {
+                profileImg.src = savedImageData;
+            } else {
+                profileImg.src = defaultImage;
+            }
+
+            // Kiểm tra chế độ sáng/tối
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            if (savedTheme === 'true') {
+                body.classList.add('dark-mode');
+                const icon = themeToggle.querySelector('i');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+        });
+
+        // Xử lý upload ảnh
+        uploadInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const imageData = event.target.result;
+                    profileImg.src = imageData;
+                    saveImageToStorage(imageData);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Xử lý nút đặt lại ảnh mặc định
+        resetButton.addEventListener('click', function () {
+            const defaultImage = 'https://placehold.co/200x200/4361ee/ffffff?text=Ảnh';
+            profileImg.src = defaultImage;
+            removeImageFromStorage();
+        });
+
+        // Xử lý chuyển đổi chế độ sáng/tối
+        themeToggle.addEventListener('click', toggleTheme);
+    </script>
+</body>
+
+</html>

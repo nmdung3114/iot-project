@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài đặt - IoT Control Panel</title>
+    <link rel="stylesheet" href="../frontend_css/setting.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <h1><i class="fas fa-microchip"></i> IoT Control Panel</h1>
+            <p>Cài đặt hệ thống và tùy chọn hiển thị</p>
+            <div class="nav-links">
+                <a href="dashboard.html"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="datasensor.html"><i class="fas fa-table"></i> Data Sensor</a>
+                <a href="history.html"><i class="fas fa-history"></i> History</a>
+                <a href="#" class="active"><i class="fas fa-cog"></i> Setting</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="connection-panel">
+                <div class="status-indicator">
+                    <div class="status-dot" id="backendStatusDot"></div>
+                    <span id="backendStatusText">Checking backend connection...</span>
+                </div>
+            </div>
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-sliders-h"></i> Cài đặt hiển thị</h2>
+            </div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label for="chartAnimation">Hiệu ứng biểu đồ</label>
+                    <select id="chartAnimation">
+                        <option value="true">Bật</option>
+                        <option value="false">Tắt</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <label for="dataRetention">Lưu trữ dữ liệu (ngày)</label>
+                    <input type="number" id="dataRetention" value="7" min="1" max="30">
+                </div>
+
+                <div class="setting-item">
+                    <label for="defaultPage">Trang mặc định khi mở</label>
+                    <select id="defaultPage">
+                        <option value="dashboard.html">Dashboard</option>
+                        <option value="datasensor.html">Data Sensor</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <label for="apiEndpoint">API Endpoint</label>
+                    <input type="text" id="apiEndpoint" value="http://localhost:3000"
+                        placeholder="http://localhost:3000">
+                </div>
+
+                <div class="setting-item">
+                    <label for="websocketEndpoint">WebSocket Endpoint</label>
+                    <input type="text" id="websocketEndpoint" value="ws://localhost:3000"
+                        placeholder="ws://localhost:3000">
+                </div>
+            </div>
+            <button class="btn" id="saveSettings"><i class="fas fa-save"></i> Lưu cài đặt</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-database"></i> Quản lý dữ liệu</h2>
+            </div>
+            <div class="data-management">
+                <p>Dung lượng dữ liệu hiện tại: <span id="dataSize">0 KB</span></p>
+                <div class="button-group">
+                    <button class="btn" id="clearData"><i class="fas fa-trash"></i> Xóa dữ liệu local</button>
+                    <button class="btn btn-warning" id="clearServerData"><i class="fas fa-database"></i> Xóa dữ liệu
+                        server</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-plug"></i> Kết nối Backend</h2>
+            </div>
+            <div class="connection-test">
+                <p>Trạng thái kết nối: <span id="connectionStatus">Chưa kiểm tra</span></p>
+                <button class="btn" id="testConnection"><i class="fas fa-bolt"></i> Kiểm tra kết nối</button>
+                <div id="connectionResult" class="connection-result"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Helper function
+        const $ = (id) => document.getElementById(id);
+
+        // Hàm kiểm tra kết nối backend
+        function checkBackendConnection() {
+            fetch('http://localhost:3000/api/health')
+                .then(response => {
+                    if (response.ok) {
+                        $('#backendStatusDot').className = 'status-dot connected';
+                        $('#backendStatusText').textContent = 'Backend Connected';
+                    } else {
+                        $('#backendStatusDot').className = 'status-dot';
+                        $('#backendStatusText').textContent = 'Backend Error';
+                    }
+                })
+                .catch(error => {
+                    $('#backendStatusDot').className = 'status-dot';
+                    $('#backendStatusText').textContent = 'Backend Unreachable';
+                    console.error('Backend connection error:', error);
+                });
+        }
+
+        // Load settings
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            updateDataSize();
+            checkBackendConnection();
+
+            // Theme toggle
+            $('themeToggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const icon = $('themeToggle').querySelector('i');
+
+                if (document.body.classList.contains('dark-mode')) {
+                    icon.className = 'fas fa-sun';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    icon.className = 'fas fa-moon';
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                $('themeToggle').querySelector('i').className = 'fas fa-sun';
+            }
+
+            // Save settings
+            $('saveSettings').addEventListener('click', () => {
+                const settings = {
+                    chartAnimation: $('chartAnimation').value,
+                    dataRetention: $('dataRetention').value,
+                    defaultPage: $('defaultPage').value,
+                    apiEndpoint: $('apiEndpoint').value,
+                    websocketEndpoint: $('websocketEndpoint').value
+                };
+
+                localStorage.setItem('appSettings', JSON.stringify(settings));
+                alert('Đã lưu cài đặt!');
+            });
+
+            // Clear local data
+            $('clearData').addEventListener('click', () => {
+                if (confirm('Bạn có chắc chắn muốn xóa tất cả dữ liệu local? Hành động này không thể hoàn tác.')) {
+                    localStorage.removeItem('sensorData');
+                    localStorage.removeItem('controlHistory');
+                    alert('Đã xóa tất cả dữ liệu local!');
+                    updateDataSize();
+                }
+            });
+
+            // Clear server data
+            $('clearServerData').addEventListener('click', () => {
+                if (confirm('Bạn có chắc chắn muốn xóa tất cả dữ liệu trên server? Hành động này không thể hoàn tác.')) {
+                    fetch('http://localhost:3000/api/clear-data', {
+                        method: 'POST'
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Đã xóa dữ liệu trên server thành công!');
+                            } else {
+                                alert('Lỗi khi xóa dữ liệu trên server: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Lỗi kết nối khi xóa dữ liệu trên server');
+                            console.error('Error clearing server data:', error);
+                        });
+                }
+            });
+
+            // Test connection
+            $('testConnection').addEventListener('click', () => {
+                testBackendConnection();
+            });
+        });
+
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+
+            if (settings.chartAnimation) {
+                $('chartAnimation').value = settings.chartAnimation;
+            }
+
+            if (settings.dataRetention) {
+                $('dataRetention').value = settings.dataRetention;
+            }
+
+            if (settings.defaultPage) {
+                $('defaultPage').value = settings.defaultPage;
+            }
+
+            if (settings.apiEndpoint) {
+                $('apiEndpoint').value = settings.apiEndpoint;
+            }
+
+            if (settings.websocketEndpoint) {
+                $('websocketEndpoint').value = settings.websocketEndpoint;
+            }
+        }
+
+        function updateDataSize() {
+            let totalSize = 0;
+
+            // Tính kích thước của tất cả dữ liệu trong localStorage
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalSize += localStorage[key].length * 2; // UTF-16 characters take 2 bytes each
+                }
+            }
+
+            $('dataSize').textContent = `${Math.round(totalSize / 1024)} KB`;
+        }
+
+        function testBackendConnection() {
+            const apiEndpoint = $('apiEndpoint').value;
+            $('#connectionStatus').textContent = 'Đang kiểm tra...';
+            $('#connectionResult').innerHTML = '';
+
+            fetch(apiEndpoint + '/api/health')
+                .then(response => response.json())
+                .then(data => {
+                    $('#connectionStatus').textContent = 'Kết nối thành công';
+                    $('#connectionResult').innerHTML = `
+                        <div class="success-message">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <strong>Kết nối backend thành công!</strong>
+                                <p>Status: ${data.status}</p>
+                                <p>Message: ${data.message}</p>
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    $('#connectionStatus').textContent = 'Kết nối thất bại';
+                    $('#connectionResult').innerHTML = `
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <strong>Không thể kết nối đến backend!</strong>
+                                <p>Lỗi: ${error.message}</p>
+                                <p>Hãy kiểm tra lại địa chỉ API endpoint và đảm bảo server đang chạy.</p>
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+    </script>
+
+
+</body>
+
+</html>

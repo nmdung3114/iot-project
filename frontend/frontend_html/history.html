@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử điều khiển - IoT Control Panel</title>
+    <link rel="stylesheet" href="../frontend_css/history.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <div class="nav-links">
+                <a href="dashboard.html"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="datasensor.html"><i class="fas fa-table"></i> Data Sensor</a>
+                <a href="history.html" class="active"><i class="fas fa-history"></i> History</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Card bộ lọc -->
+        <div class="card filter-card">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="deviceFilter">Thiết bị</label>
+                    <select id="deviceFilter">
+                        <option value="all">Tất cả thiết bị</option>
+                        <option value="led1">LED 1</option>
+                        <option value="led2">LED 2</option>
+                        <option value="led3">LED 3</option>
+                        <option value="fan">Quạt</option>
+                        <option value="ac">Điều hòa</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="statusFilter">Trạng thái</label>
+                    <select id="statusFilter">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="ON">Bật</option>
+                        <option value="OFF">Tắt</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="searchInput">Tìm kiếm</label>
+                    <input type="text" id="searchInput" placeholder="Nhập từ khóa...">
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> Làm mới</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card bảng dữ liệu -->
+        <div class="card table-card">
+            <div class="data-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thiết bị</th>
+                            <th>Lệnh</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="pagination">
+            <button id="firstPage" disabled><i class="fas fa-angle-double-left"></i></button>
+            <button id="prevPage" disabled><i class="fas fa-chevron-left"></i></button>
+            <div class="pagination-info" id="paginationInfo">
+                Trang <span id="currentPage">1</span> / <span id="totalPages">1</span>
+                (<span id="totalRecords">0</span> bản ghi)
+            </div>
+            <button id="nextPage" disabled><i class="fas fa-chevron-right"></i></button>
+            <button id="lastPage" disabled><i class="fas fa-angle-double-right"></i></button>
+
+            <div class="page-size-selector">
+                <label for="pageSize">Hiển thị:</label>
+                <select id="pageSize">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const $ = id => document.getElementById(id);
+
+        let controlHistory = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let pageSize = parseInt($('pageSize').value);
+        let currentFilters = {
+            deviceId: 'all',
+            action: 'all',
+            search: ''
+        };
+
+        // Hàm copy thời gian
+        function copyTimestamp(timestamp) {
+            navigator.clipboard.writeText(timestamp).then(() => {
+                // Hiệu ứng visual khi copy thành công
+                showCopyFeedback();
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback cho trình duyệt cũ
+                const textArea = document.createElement('textarea');
+                textArea.value = timestamp;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showCopyFeedback();
+            });
+        }
+
+        // Hiệu ứng khi copy thành công
+        function showCopyFeedback() {
+            // Có thể thêm thông báo toast hoặc hiệu ứng khác ở đây
+            console.log('Copy thành công!');
+        }
+
+        async function loadControlHistory(page = 1) {
+            try {
+                pageSize = parseInt($('pageSize').value);
+
+                // Lấy giá trị filter hiện tại
+                currentFilters = {
+                    deviceId: $('deviceFilter').value,
+                    action: $('statusFilter').value,
+                    search: $('searchInput').value.trim()
+                };
+
+                const params = new URLSearchParams({
+                    page,
+                    limit: pageSize
+                });
+
+                // Thêm filter vào params nếu không phải là 'all'
+                if (currentFilters.deviceId !== 'all') {
+                    params.append('deviceId', currentFilters.deviceId);
+                }
+                if (currentFilters.action !== 'all') {
+                    params.append('action', currentFilters.action);
+                }
+                if (currentFilters.search) {
+                    params.append('search', currentFilters.search);
+                }
+
+                const res = await fetch(`http://localhost:3000/api/history/control?${params.toString()}`);
+                if (res.ok) {
+                    const result = await res.json();
+                    controlHistory = result.data;
+                    currentPage = result.pagination.page;
+                    totalPages = result.pagination.pages;
+
+                    updateTable();
+                    updatePagination(result.pagination.total);
+                }
+            } catch (err) {
+                console.error('Lỗi khi tải lịch sử:', err);
+            }
+        }
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1; // tháng bắt đầu từ 0
+            const day = date.getDate();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+
+        function updateTable() {
+            const tbody = $('historyTableBody');
+            tbody.innerHTML = '';
+
+            if (!controlHistory.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="no-data">Không có dữ liệu</td></tr>';
+                return;
+            }
+
+            controlHistory.forEach(item => {
+                const date = new Date(item.timestamp);
+                const timeString = date.toLocaleTimeString('vi-VN');
+                const dateString = date.toLocaleDateString('vi-VN');
+                const fullTimestamp = formatDate(item.timestamp);
+
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.device_name}</td>
+                    <td>${item.action}</td>
+                    <td><span class="pill ${item.action === 'ON' ? 'success' : 'danger'}">${item.action}</span></td>
+                    <td>
+                        <div class="timestamp-container">
+                            <span class="timestamp-text">${fullTimestamp}</span>
+                            <button class="copy-btn" title="Copy thời gian" onclick="copyTimestamp('${fullTimestamp}')">
+                                <i class="far fa-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updatePagination(totalRecords) {
+            $('currentPage').textContent = currentPage;
+            $('totalPages').textContent = totalPages;
+            $('totalRecords').textContent = totalRecords;
+            $('prevPage').disabled = currentPage === 1;
+            $('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+            $('firstPage').disabled = currentPage === 1;
+            $('lastPage').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function changePage(newPage) {
+            if (newPage < 1 || newPage > totalPages) return;
+            currentPage = newPage;
+            loadControlHistory(currentPage);
+        }
+
+        // Xử lý sự kiện
+        $('prevPage').addEventListener('click', () => changePage(currentPage - 1));
+        $('nextPage').addEventListener('click', () => changePage(currentPage + 1));
+        $('firstPage').addEventListener('click', () => changePage(1));
+        $('lastPage').addEventListener('click', () => changePage(totalPages));
+        $('pageSize').addEventListener('change', () => loadControlHistory(1));
+        $('deviceFilter').addEventListener('change', () => loadControlHistory(1));
+        $('statusFilter').addEventListener('change', () => loadControlHistory(1));
+
+        let searchTimeout;
+        $('searchInput').addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => loadControlHistory(1), 500);
+        });
+
+        $('refreshBtn').addEventListener('click', () => {
+            $('deviceFilter').value = 'all';
+            $('statusFilter').value = 'all';
+            $('searchInput').value = '';
+            currentFilters = {
+                deviceId: 'all',
+                action: 'all',
+                search: ''
+            };
+            loadControlHistory(1);
+        });
+
+        function applyTheme() {
+            const t = localStorage.getItem('theme');
+            if (t === 'dark') {
+                document.body.classList.add('dark-mode');
+                $('themeToggle').querySelector('i').className = 'fas fa-sun';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const icon = $('themeToggle').querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        $('themeToggle').addEventListener('click', toggleTheme);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyTheme();
+            loadControlHistory(1);
+        });
+    </script>
+</body>
+
+</html>

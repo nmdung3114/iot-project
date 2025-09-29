@@ -1,0 +1,1166 @@
+/* ===== VARIABLES ===== */
+:root {
+  /* New Color Palette - More vibrant */
+  --primary: #6c5ce7;
+  --primary-light: #a29bfe;
+  --primary-gradient: linear-gradient(135deg, #6c5ce7 0%, #00cec9 100%);
+  --secondary: #fd79a8;
+  --success: #00b894;
+  --danger: #d63031;
+  --warning: #fdcb6e;
+  --info: #0984e3;
+  --light: #f8f9fa;
+  --dark: #2d3436;
+
+  /* Sensor-specific colors - More vibrant */
+  --temp-color: #ff7675;
+  --temp-gradient: linear-gradient(135deg, #ff7675 0%, #fdcb6e 100%);
+  --hum-color: #00cec9;
+  --hum-gradient: linear-gradient(135deg, #00cec9 0%, #0984e3 100%);
+  --light-color: #fdcb6e;
+  --light-gradient: linear-gradient(135deg, #fdcb6e 0%, #ff7675 100%);
+
+  /* Header colors */
+  --header-bg: linear-gradient(135deg, #6c5ce7 0%, #00cec9 100%);
+  --header-text: #ffffff;
+  --header-nav-hover: rgba(255, 255, 255, 0.2);
+  --header-nav-active: rgba(255, 255, 255, 0.3);
+
+  /* Backgrounds */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-hover: rgba(108, 92, 231, 0.08);
+
+  /* Text */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  /* Borders */
+  --border-color: #e2e8f0;
+  --border-radius: 10px;
+  --border-radius-sm: 6px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(108, 92, 231, 0.1);
+  --shadow-md: 0 4px 8px rgba(108, 92, 231, 0.12);
+  --shadow-lg: 0 10px 15px rgba(108, 92, 231, 0.15);
+  --shadow-xl: 0 20px 25px rgba(108, 92, 231, 0.2);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+
+  /* Spacing - Reduced */
+  --spacing-xs: 0.2rem;
+  --spacing-sm: 0.4rem;
+  --spacing-md: 0.6rem;
+  --spacing-lg: 0.9rem;
+  --spacing-xl: 1.2rem;
+
+  /* Margin for edges */
+  --edge-margin: 10px;
+}
+
+/* ===== DARK THEME ===== */
+body.dark-mode {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-hover: rgba(108, 92, 231, 0.15);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+
+  --border-color: #334155;
+
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.45);
+
+  --header-bg: linear-gradient(135deg, #5c4cd9 0%, #00b8a9 100%);
+}
+
+/* ===== RESET & GLOBAL ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+  padding: var(--edge-margin);
+}
+
+/* ===== ENHANCED HEADER ===== */
+header {
+  width: calc(66.66vw - (2 * var(--edge-margin)));
+  max-width: 1200px;
+  height: 60px;
+  margin: 0 auto 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--header-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: 0 var(--spacing-lg);
+  transition: all var(--transition-normal);
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+  opacity: 0.3;
+  transform: rotate(30deg);
+  pointer-events: none;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--header-text);
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.nav-links a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--header-nav-hover);
+  transition: left var(--transition-normal);
+  z-index: -1;
+}
+
+.nav-links a:hover::before {
+  left: 0;
+}
+
+.nav-links a.active {
+  background: var(--header-nav-active);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-links a.active::before {
+  left: 0;
+}
+
+.nav-links a i {
+  font-size: 1rem;
+  transition: transform var(--transition-normal);
+}
+
+.nav-links a:hover i {
+  transform: scale(1.1);
+}
+
+.theme-toggle {
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--header-text);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-normal);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(15deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== MAIN - CẬP NHẬT QUAN TRỌNG ===== */
+main {
+  height: calc(100vh - 80px - 10px);
+  /* Trừ đi chiều cao header và khoảng cách dưới cùng */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--spacing-md);
+  width: calc(66.66vw - (2 * var(--edge-margin)));
+  max-width: 1200px;
+  height: 100%;
+}
+
+/* ===== CARD STYLES ===== */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.card-title i {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.2rem;
+}
+
+/* ===== HÀNG 1: SENSOR DATA ===== */
+.row-1 {
+  display: flex;
+  flex-direction: column;
+}
+
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.sensor-item {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 110px;
+  border: 1px solid var(--border-color);
+}
+
+.sensor-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+}
+
+#temp-sensor::before {
+  background: var(--temp-gradient);
+}
+
+#hum-sensor::before {
+  background: var(--hum-gradient);
+}
+
+#light-sensor::before {
+  background: var(--light-gradient);
+}
+
+.sensor-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+#temp-sensor::after {
+  background: linear-gradient(135deg, rgba(255, 118, 117, 0.1) 0%, transparent 100%);
+}
+
+#hum-sensor::after {
+  background: linear-gradient(135deg, rgba(0, 206, 201, 0.1) 0%, transparent 100%);
+}
+
+#light-sensor::after {
+  background: linear-gradient(135deg, rgba(253, 203, 110, 0.1) 0%, transparent 100%);
+}
+
+.sensor-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.sensor-item:hover::after {
+  opacity: 1;
+}
+
+.sensor-icon {
+  font-size: 1.6rem;
+  margin-bottom: var(--spacing-xs);
+  transition: transform var(--transition-normal);
+}
+
+#temp-sensor .sensor-icon {
+  color: #ff7675;
+  background: linear-gradient(135deg, #ff7675 0%, #fdcb6e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#hum-sensor .sensor-icon {
+  color: #00cec9;
+  background: linear-gradient(135deg, #00cec9 0%, #0984e3 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#light-sensor .sensor-icon {
+  color: #fdcb6e;
+  background: linear-gradient(135deg, #fdcb6e 0%, #ff7675 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sensor-item:hover .sensor-icon {
+  transform: scale(1.15);
+}
+
+.sensor-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+  transition: all var(--transition-normal);
+}
+
+#temp-sensor .sensor-value {
+  color: #ff7675;
+}
+
+#hum-sensor .sensor-value {
+  color: #00cec9;
+}
+
+#light-sensor .sensor-value {
+  color: #fdcb6e;
+}
+
+.sensor-item:hover .sensor-value {
+  transform: scale(1.05);
+}
+
+.sensor-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ===== HÀNG 2: CHART + DEVICE CONTROL - CẬP NHẬT QUAN TRỌNG ===== */
+.row-2 {
+  display: flex;
+  gap: var(--spacing-md);
+  height: 100%;
+  min-height: 0;
+  /* Cho phép co lại */
+  align-items: stretch;
+}
+
+/* Chart card - chiếm 2/3 không gian và cao hơn */
+.chart-card {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+  /* Khoảng cách 10px so với mép dưới */
+}
+
+/* Device card - chiếm 1/3 không gian */
+.device-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 452px;
+}
+
+.chart-grid {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  min-height: 300px;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ===== DEVICE CONTROL STYLES ===== */
+.device-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.device-item {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-color);
+  min-height: 50px;
+  flex-shrink: 0;
+  margin: 12px 0px;
+}
+
+.device-item:hover {
+  border-color: var(--primary-light);
+  transform: translateX(3px);
+  box-shadow: var(--shadow-sm);
+}
+
+.device-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  flex: 1;
+}
+
+.device-icon {
+  font-size: 1.2rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(108, 92, 231, 0.1);
+  transition: all var(--transition-normal);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.device-item:hover .device-icon {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.05);
+}
+
+.device-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-status {
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  background: var(--gray-300);
+  color: var(--gray-700);
+  font-size: 0.75rem;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin: 0 var(--spacing-sm);
+}
+
+.device-status.on {
+  background: rgba(0, 184, 169, 0.2);
+  color: #00b8a9;
+}
+
+.device-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+}
+
+.btn-icon:hover {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(108, 92, 231, 0.3);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.03);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.card {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.sensor-item {
+  animation: slideIn 0.4s ease forwards;
+}
+
+.sensor-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.sensor-item:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.sensor-item:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.device-item {
+  animation: slideIn 0.4s ease forwards;
+}
+
+.device-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.device-item:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.device-item:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.device-item:nth-child(4) {
+  animation-delay: 0.25s;
+}
+
+.device-item:nth-child(5) {
+  animation-delay: 0.3s;
+}
+
+/* Header gradient animation */
+header {
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+
+  header,
+  .dashboard {
+    width: calc(90vw - (2 * var(--edge-margin)));
+  }
+}
+
+@media (max-width: 992px) {
+  .row-2 {
+    flex-direction: column;
+  }
+
+  .chart-card,
+  .device-card {
+    flex: none;
+    width: 100%;
+  }
+
+  .chart-card {
+    margin-bottom: 0;
+    /* Bỏ margin trên mobile */
+  }
+
+  .nav-links {
+    gap: var(--spacing-sm);
+  }
+
+  .nav-links a span {
+    display: none;
+  }
+
+  .nav-links a i {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .sensor-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  header {
+    height: auto;
+    padding: var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: 8px;
+  }
+
+  .dashboard {
+    gap: var(--spacing-sm);
+  }
+
+  .sensor-item {
+    min-height: 95px;
+  }
+
+  .device-item {
+    min-height: 45px;
+  }
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+
+/* Hiệu ứng nhấp nháy cảnh báo cho toàn bộ sensor-item */
+@keyframes tempWarning {
+  0% {
+    background-color: rgba(255, 118, 117, 0.1);
+    box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.5);
+  }
+
+  50% {
+    background-color: rgba(255, 118, 117, 0.3);
+    box-shadow: 0 0 15px 5px rgba(255, 118, 117, 0.7);
+  }
+
+  100% {
+    background-color: rgba(255, 118, 117, 0.1);
+    box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.5);
+  }
+}
+
+@keyframes humWarning {
+  0% {
+    background-color: rgba(0, 206, 201, 0.1);
+    box-shadow: 0 0 0 0 rgba(0, 206, 201, 0.5);
+  }
+
+  50% {
+    background-color: rgba(0, 206, 201, 0.3);
+    box-shadow: 0 0 15px 5px rgba(0, 206, 201, 0.7);
+  }
+
+  100% {
+    background-color: rgba(0, 206, 201, 0.1);
+    box-shadow: 0 0 0 0 rgba(0, 206, 201, 0.5);
+  }
+}
+
+@keyframes lightWarning {
+  0% {
+    background-color: rgba(253, 203, 110, 0.1);
+    box-shadow: 0 0 0 0 rgba(253, 203, 110, 0.5);
+  }
+
+  50% {
+    background-color: rgba(253, 203, 110, 0.3);
+    box-shadow: 0 0 15px 5px rgba(253, 203, 110, 0.7);
+  }
+
+  100% {
+    background-color: rgba(253, 203, 110, 0.1);
+    box-shadow: 0 0 0 0 rgba(253, 203, 110, 0.5);
+  }
+}
+
+@keyframes tempCritical {
+  0% {
+    background-color: rgba(255, 0, 0, 0.2);
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+  }
+
+  50% {
+    background-color: rgba(255, 0, 0, 0.5);
+    box-shadow: 0 0 20px 8px rgba(255, 0, 0, 0.9);
+  }
+
+  100% {
+    background-color: rgba(255, 0, 0, 0.2);
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+  }
+}
+
+@keyframes humCritical {
+  0% {
+    background-color: rgba(0, 83, 207, 0.2);
+    box-shadow: 0 0 0 0 rgba(0, 83, 207, 0.7);
+  }
+
+  50% {
+    background-color: rgba(0, 83, 207, 0.5);
+    box-shadow: 0 0 20px 8px rgba(0, 83, 207, 0.9);
+  }
+
+  100% {
+    background-color: rgba(0, 83, 207, 0.2);
+    box-shadow: 0 0 0 0 rgba(0, 83, 207, 0.7);
+  }
+}
+
+@keyframes lightCritical {
+  0% {
+    background-color: rgba(255, 165, 0, 0.2);
+    box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7);
+  }
+
+  50% {
+    background-color: rgba(255, 165, 0, 0.5);
+    box-shadow: 0 0 20px 8px rgba(255, 165, 0, 0.9);
+  }
+
+  100% {
+    background-color: rgba(255, 165, 0, 0.2);
+    box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7);
+  }
+}
+
+#temp-sensor.warning {
+  animation: tempWarning 2s infinite;
+  border: 2px solid rgba(255, 118, 117, 0.5);
+}
+
+#hum-sensor.warning {
+  animation: humWarning 2s infinite;
+  border: 2px solid rgba(0, 206, 201, 0.5);
+}
+
+#light-sensor.warning {
+  animation: lightWarning 2s infinite;
+  border: 2px solid rgba(253, 203, 110, 0.5);
+}
+
+#temp-sensor.critical {
+  animation: tempCritical 1s infinite;
+  border: 2px solid rgba(255, 0, 0, 0.7);
+  z-index: 10;
+}
+
+#hum-sensor.critical {
+  animation: humCritical 1s infinite;
+  border: 2px solid rgba(0, 83, 207, 0.7);
+  z-index: 10;
+}
+
+#light-sensor.critical {
+  animation: lightCritical 1s infinite;
+  border: 2px solid rgba(255, 165, 0, 0.7);
+  z-index: 10;
+}
+
+/* Hiệu ứng cho chữ và icon khi cảnh báo */
+.sensor-item.warning .sensor-value,
+.sensor-item.critical .sensor-value {
+  animation: textPulse 1.5s infinite;
+  font-weight: 800;
+}
+
+.sensor-item.warning .sensor-icon,
+.sensor-item.critical .sensor-icon {
+  animation: iconPulse 1.5s infinite;
+}
+
+@keyframes textPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes iconPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Dark mode adjustments */
+body.dark-mode .sensor-item.warning,
+body.dark-mode .sensor-item.critical {
+  background-color: var(--bg-secondary) !important;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Dark mode styles */
+.dark-mode input:checked + .slider {
+    background-color: #64ce66;
+}
+
+/* Hiệu ứng chung cho icon */
+.device-icon.active i {
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+}
+
+/* Hiệu ứng riêng cho từng LED với màu cụ thể */
+/* LED 1 - Màu xanh lá: rgb(125, 241, 125) */
+.device-icon.active.led-1 i {
+    animation: 
+        led-glow-1 1.2s infinite alternate,
+        led-pulse 2s infinite;
+    filter: 
+        drop-shadow(0 0 8px rgba(125, 241, 125, 0.8))
+        drop-shadow(0 0 16px rgba(125, 241, 125, 0.6))
+        brightness(1.5);
+    color: rgb(125, 241, 125) !important;
+}
+
+/* LED 2 - Màu cam: rgb(236, 85, 25) */
+.device-icon.active.led-2 i {
+    animation: 
+        led-glow-2 1.2s infinite alternate,
+        led-pulse 2s infinite;
+    filter: 
+        drop-shadow(0 0 8px rgba(236, 85, 25, 0.8))
+        drop-shadow(0 0 16px rgba(236, 85, 25, 0.6))
+        brightness(1.5);
+    color: rgb(236, 85, 25) !important;
+}
+
+/* LED 3 - Màu vàng: rgb(244, 248, 15) */
+.device-icon.active.led-3 i {
+    animation: 
+        led-glow-3 1.2s infinite alternate,
+        led-pulse 2s infinite;
+    filter: 
+        drop-shadow(0 0 8px rgba(244, 248, 15, 0.8))
+        drop-shadow(0 0 16px rgba(244, 248, 15, 0.6))
+        brightness(1.5);
+    color: rgb(244, 248, 15) !important;
+}
+
+/* Hiệu ứng cho quạt */
+.device-icon.active.fan i {
+    animation: 
+        fan-spin 1.5s infinite linear,
+        fan-glow 2s infinite alternate;
+    filter: 
+        drop-shadow(0 0 8px rgba(0, 0, 255, 0.5))
+        drop-shadow(0 0 12px rgba(0, 0, 255, 0.3));
+}
+
+/* Hiệu ứng cho điều hòa */
+.device-icon.active.ac i {
+    animation: 
+        ac-pulse 1s infinite alternate,
+        ac-glow 3s infinite alternate;
+    filter: 
+        drop-shadow(0 0 8px rgba(0, 128, 128, 0.6))
+        drop-shadow(0 0 14px rgba(0, 128, 128, 0.4));
+}
+
+/* Hiệu ứng nhấp nháy cho LED 1 (xanh lá) */
+@keyframes led-glow-1 {
+    from { 
+        filter: 
+            drop-shadow(0 0 6px rgba(125, 241, 125, 0.7))
+            drop-shadow(0 0 12px rgba(125, 241, 125, 0.5))
+            brightness(1.4);
+    }
+    to { 
+        filter: 
+            drop-shadow(0 0 12px rgba(125, 241, 125, 0.9))
+            drop-shadow(0 0 20px rgba(125, 241, 125, 0.7))
+            brightness(1.8);
+    }
+}
+
+/* Hiệu ứng nhấp nháy cho LED 2 (cam) */
+@keyframes led-glow-2 {
+    from { 
+        filter: 
+            drop-shadow(0 0 6px rgba(236, 85, 25, 0.7))
+            drop-shadow(0 0 12px rgba(236, 85, 25, 0.5))
+            brightness(1.4);
+    }
+    to { 
+        filter: 
+            drop-shadow(0 0 12px rgba(236, 85, 25, 0.9))
+            drop-shadow(0 0 20px rgba(236, 85, 25, 0.7))
+            brightness(1.8);
+    }
+}
+
+/* Hiệu ứng nhấp nháy cho LED 3 (vàng) */
+@keyframes led-glow-3 {
+    from { 
+        filter: 
+            drop-shadow(0 0 6px rgba(244, 248, 15, 0.7))
+            drop-shadow(0 0 12px rgba(244, 248, 15, 0.5))
+            brightness(1.4);
+    }
+    to { 
+        filter: 
+            drop-shadow(0 0 12px rgba(244, 248, 15, 0.9))
+            drop-shadow(0 0 20px rgba(244, 248, 15, 0.7))
+            brightness(1.8);
+    }
+}
+
+@keyframes led-pulse {
+    0%, 100% { transform: scale(1.1); }
+    50% { transform: scale(1.15); }
+}
+
+/* Hiệu ứng quay cho quạt */
+@keyframes fan-spin {
+    from { transform: rotate(0deg) scale(1.1); }
+    to { transform: rotate(360deg) scale(1.1); }
+}
+
+@keyframes fan-glow {
+    from { filter: 
+        drop-shadow(0 0 6px rgba(0, 0, 255, 0.5))
+        drop-shadow(0 0 10px rgba(0, 0, 255, 0.3)); }
+    to { filter: 
+        drop-shadow(0 0 8px rgba(0, 0, 255, 0.6))
+        drop-shadow(0 0 14px rgba(0, 0, 255, 0.4)); }
+}
+
+/* Hiệu ứng cho điều hòa */
+@keyframes ac-pulse {
+    from { opacity: 0.8; transform: scale(1.05); }
+    to { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes ac-glow {
+    from { filter: 
+        drop-shadow(0 0 6px rgba(0, 128, 128, 0.6))
+        drop-shadow(0 0 12px rgba(0, 128, 128, 0.4)); }
+    to { filter: 
+        drop-shadow(0 0 8px rgba(0, 128, 128, 0.7))
+        drop-shadow(0 0 16px rgba(0, 128, 128, 0.5)); }
+}
+
+/* Hiệu ứng khi di chuột vào icon */
+.device-icon:hover i {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+.device-icon.active:hover i {
+    transform: scale(1.2);
+}

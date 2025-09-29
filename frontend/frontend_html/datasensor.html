@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Data Sensor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../frontend_css/datasensor.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <div class="nav-links">
+                <a href="dashboard.html"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="#" class="active"><i class="fas fa-table"></i> Data Sensor</a>
+                <a href="history.html"><i class="fas fa-history"></i> History</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Profile</a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    </header>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label for="data-type">Loại dữ liệu</label>
+            <select id="data-type">
+                <option value="all">Tất cả dữ liệu</option>
+                <option value="temperature">Nhiệt độ</option>
+                <option value="humidity">Độ ẩm</option>
+                <option value="light">Ánh sáng</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="search">Tìm kiếm</label>
+            <input type="text" id="search" placeholder="Nhập từ khóa...">
+        </div>
+
+        <div class="filter-group">
+            <button class="btn" id="refresh-btn"><i class="fas fa-sync-alt"></i> Làm mới</button>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        <table id="main-table">
+            <thead>
+                <tr>
+                    <th data-sort="temperature" class="temperature-column">Nhiệt độ (°C) <i class="fas fa-sort"></i></th>
+                    <th data-sort="humidity" class="humidity-column">Độ ẩm (%) <i class="fas fa-sort"></i></th>
+                    <th data-sort="light" class="light-column">Ánh sáng (lux) <i class="fas fa-sort"></i></th>
+                    <th data-sort="timestamp">Thời gian <i class="fas fa-sort"></i></th>
+                </tr>
+            </thead>
+            <tbody id="sensor-data">
+                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+            </tbody>
+        </table>
+
+        <div class="no-data" id="no-data" style="display: none;">
+            <i class="fas fa-database" style="font-size: 48px; margin-top: 100px;"></i>
+            <p>Không có dữ liệu nào phù hợp với bộ lọc của bạn</p>
+        </div>
+    </div>
+
+    <div class="pagination" id="pagination-container">
+        <button id="first-page" disabled><i class="fas fa-angle-double-left"></i></button>
+        <button id="prev-page" disabled><i class="fas fa-angle-left"></i></button>
+
+        <div class="pagination-info">
+            Trang <span id="current-page">1</span> / <span id="total-pages">1</span>
+            <span class="data-count">(<span id="total-items">0</span> bản ghi)</span>
+        </div>
+
+        <button id="next-page" disabled><i class="fas fa-angle-right"></i></button>
+        <button id="last-page" disabled><i class="fas fa-angle-double-right"></i></button>
+
+        <div class="page-size-selector">
+            <label for="page-size">Hiển thị:</label>
+            <select id="page-size">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+
+    <script>
+    const $ = (id) => document.getElementById(id);
+
+    // ===== Biến toàn cục =====
+    let groupedData = {};
+    let allData = [];
+    let currentPage = 1;
+    let pageSize = 10;
+    let sortField = 'timestamp';
+    let sortDirection = 'desc';
+    let currentFilters = { dataType: 'all', search: '' };
+    let totalRecords = 0;
+
+    // ===== Backend connection check =====
+    function checkBackendConnection() {
+        fetch('http://localhost:3000/api/health')
+            .then(res => res.ok ? console.log('Backend connected') : console.log('Backend returned error'))
+            .catch(err => console.error('Backend connection error:', err));
+    }
+
+    // ===== Fetch sensor data (ĐÃ SỬA PHÂN TRANG) =====
+    async function fetchSensorData() {
+        try {
+            console.log('Fetching data from API...');
+            
+            // Xây dựng URL parameters - SỬA LẠI PHÂN TRANG
+            const params = new URLSearchParams();
+            params.append('page', currentPage); // Sử dụng page hiện tại
+            params.append('limit', pageSize);   // Sử dụng pageSize hiện tại (10, 25, 50, 100)
+            params.append('sortBy', sortField);
+            params.append('sortOrder', sortDirection);
+            
+            // Thêm search term nếu có
+            if (currentFilters.search) {
+                params.append('search', currentFilters.search);
+            }
+            
+            // Thêm filter loại dữ liệu nếu không phải "all"
+            if (currentFilters.dataType !== 'all') {
+                params.append('sensorType', currentFilters.dataType);
+            }
+
+            const response = await fetch(`http://localhost:3000/api/sensor/data?${params.toString()}`);
+            
+            if (!response.ok) {
+                console.error('Failed to fetch sensor data, status:', response.status);
+                showNoDataMessage();
+                return;
+            }
+            
+            const result = await response.json();
+            if (result.success) {
+                groupedData = {};
+                allData = processSensorData(result.data);
+                totalRecords = result.pagination ? result.pagination.total : 0;
+                
+                // Cập nhật pagination info từ server
+                if (result.pagination) {
+                    $('total-pages').textContent = result.pagination.pages;
+                    $('total-items').textContent = result.pagination.total;
+                    $('current-page').textContent = result.pagination.page;
+                }
+                
+                renderData();
+            } else {
+                showNoDataMessage();
+            }
+        } catch (error) {
+            console.error('Error fetching sensor data:', error);
+            showNoDataMessage();
+        }
+    }
+
+    // ===== Hiển thị thông báo không có dữ liệu =====
+    function showNoDataMessage() {
+        const sensorDataElem = $('sensor-data');
+        const noDataElem = $('no-data');
+        
+        if (sensorDataElem) sensorDataElem.innerHTML = '';
+        if (noDataElem) noDataElem.style.display = 'block';
+        
+        // Reset pagination info
+        $('total-pages').textContent = '1';
+        $('total-items').textContent = '0';
+        $('current-page').textContent = '1';
+        
+        // Disable all pagination buttons
+        document.querySelectorAll('#pagination-container button').forEach(btn => {
+            btn.disabled = true;
+        });
+    }
+
+    // ===== Process & group data =====
+    function normalizeTimestamp(value) {
+        try {
+            let d = typeof value === 'number' ? new Date(value) : new Date(value);
+            if (isNaN(d)) {
+                d = new Date(String(value).replace(' ', 'T'));
+            }
+            if (isNaN(d)) d = new Date();
+            const pad = n => n.toString().padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        } catch {
+            const d = new Date();
+            const pad = n => n.toString().padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+    }
+
+    function processSensorData(rawData) {
+        return rawData.map(item => ({
+        id: item._id ? JSON.stringify(item._id) : item.timestamp, // Tạo ID duy nhất
+        timestamp: item.timestamp,
+        temperature: item.temperature,
+        humidity: item.humidity,
+        light: item.light,
+        status: item.status || 'normal'
+    }));
+    }
+
+    // ===== Render helpers =====
+    const formatDate = dateString => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    
+    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+};
+    
+    const formatSensorValue = (value, type) => {
+        if (value === null || value === undefined) return '<span class="sensor-value na">N/A</span>';
+        const cls = type === 'temperature' ? 'temp-value' : type === 'humidity' ? 'hum-value' : 'light-value';
+        return `<span class="sensor-value ${cls}">${value}</span>`;
+    };
+
+    // ===== Hàm copy thời gian =====
+    function copyTimestamp(timestamp) {
+        navigator.clipboard.writeText(timestamp).then(() => {
+            // Hiệu ứng visual khi copy thành công
+            const event = new Event('copySuccess');
+            document.dispatchEvent(event);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            // Fallback cho trình duyệt cũ
+            const textArea = document.createElement('textarea');
+            textArea.value = timestamp;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            const event = new Event('copySuccess');
+            document.dispatchEvent(event);
+        });
+    }
+
+    // ===== Render table (ĐÃ SỬA - THÊM NÚT COPY) =====
+    const renderData = () => {
+    const sensorDataElem = $('sensor-data');
+    const noDataElem = $('no-data');
+
+    if (!sensorDataElem) return console.error('sensor-data element missing');
+
+    const totalPages = parseInt($('total-pages').textContent) || 1;
+
+    $('first-page').disabled = currentPage === 1;
+    $('prev-page').disabled = currentPage === 1;
+    $('next-page').disabled = currentPage === totalPages;
+    $('last-page').disabled = currentPage === totalPages;
+
+    if (!allData || allData.length === 0) {
+        noDataElem.style.display = 'block';
+        sensorDataElem.innerHTML = '';
+        return;
+    } else {
+        noDataElem.style.display = 'none';
+    }
+
+    sensorDataElem.innerHTML = allData.map(item => {
+        const formattedTime = formatDate(item.timestamp);
+        return `<tr>
+            <td class="temperature-column">${formatSensorValue(item.temperature, 'temperature')}</td>
+            <td class="humidity-column">${formatSensorValue(item.humidity, 'humidity')}</td>
+            <td class="light-column">${formatSensorValue(item.light, 'light')}</td>
+            <td>
+                <div class="timestamp-container">
+                    <span class="timestamp-text">${formattedTime}</span>
+                    <button class="copy-btn" title="Copy thời gian" onclick="copyTimestamp('${formattedTime}')">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Thêm sự kiện cho hiệu ứng copy
+    document.addEventListener('copySuccess', function(e) {
+        // Có thể thêm thông báo hoặc hiệu ứng visual ở đây
+        console.log('Copy thành công!');
+    });
+
+    updateColumnVisibility();
+};
+
+    // ===== Hiển thị/ẩn cột dữ liệu =====
+    const updateColumnVisibility = () => {
+        const dataType = currentFilters.dataType;
+        
+        document.querySelectorAll('.temperature-column').forEach(el => {
+            el.style.display = (dataType === 'all' || dataType === 'temperature') ? '' : 'none';
+        });
+        
+        document.querySelectorAll('.humidity-column').forEach(el => {
+            el.style.display = (dataType === 'all' || dataType === 'humidity') ? '' : 'none';
+        });
+        
+        document.querySelectorAll('.light-column').forEach(el => {
+            el.style.display = (dataType === 'all' || dataType === 'light') ? '' : 'none';
+        });
+
+        const rows = document.querySelectorAll('#sensor-data tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 4) {
+                cells[0].style.display = (dataType === 'all' || dataType === 'temperature') ? '' : 'none';
+                cells[1].style.display = (dataType === 'all' || dataType === 'humidity') ? '' : 'none';
+                cells[2].style.display = (dataType === 'all' || dataType === 'light') ? '' : 'none';
+            }
+        });
+    };
+
+    // ===== Setup pagination (ĐÃ SỬA) =====
+    const setupPagination = () => {
+        const first = $('first-page'), prev = $('prev-page'), 
+              next = $('next-page'), last = $('last-page'), 
+              pageSizeElem = $('page-size');
+
+        if (!first || !prev || !next || !last || !pageSizeElem) return console.warn('Pagination elements missing');
+
+        const updatePage = (newPage) => {
+            currentPage = newPage;
+            fetchSensorData(); // Gọi API khi chuyển trang
+        };
+
+        first.addEventListener('click', () => updatePage(1));
+        prev.addEventListener('click', () => currentPage > 1 && updatePage(currentPage - 1));
+        next.addEventListener('click', () => {
+            const totalPages = parseInt($('total-pages').textContent) || 1;
+            if (currentPage < totalPages) updatePage(currentPage + 1);
+        });
+        last.addEventListener('click', () => {
+            const totalPages = parseInt($('total-pages').textContent) || 1;
+            updatePage(totalPages);
+        });
+
+        pageSizeElem.addEventListener('change', e => {
+            pageSize = parseInt(e.target.value);
+            currentPage = 1;
+            fetchSensorData();
+        });
+    };
+
+    // ===== Setup sorting =====
+    const setupSorting = () => {
+        const headers = document.querySelectorAll('th[data-sort]');
+        if (!headers.length) return console.warn('No sortable headers');
+        
+        headers.forEach(th => {
+            th.addEventListener('click', () => {
+                const field = th.getAttribute('data-sort');
+                if (sortField === field) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortField = field;
+                    sortDirection = 'asc';
+                }
+                
+                document.querySelectorAll('th i').forEach(icon => icon.className = 'fas fa-sort');
+                const icon = th.querySelector('i');
+                if (icon) icon.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                
+                currentPage = 1;
+                fetchSensorData(); // Gọi API khi sort
+            });
+        });
+    };
+
+    // ===== Setup filters & refresh =====
+    const setupFilters = () => {
+        const dataType = $('data-type'), search = $('search');
+        const refreshBtn = $('refresh-btn');
+
+        const applyHandler = () => {
+            currentFilters = {
+                dataType: dataType ? dataType.value : 'all',
+                search: search ? search.value : ''
+            };
+            currentPage = 1;
+            fetchSensorData(); // Gọi API khi filter thay đổi
+        };
+
+        if (dataType) dataType.addEventListener('change', applyHandler);
+        if (search) {
+            let searchTimeout;
+            search.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(applyHandler, 500); // Debounce 500ms
+            });
+        }
+
+        if (refreshBtn) refreshBtn.addEventListener('click', () => {
+            // Reset filters
+            if (dataType) dataType.value = 'all';
+            if (search) search.value = '';
+            
+            currentFilters = { dataType: 'all', search: '' };
+            currentPage = 1;
+            sortField = 'timestamp';
+            sortDirection = 'desc';
+            
+            // Reset UI
+            document.querySelectorAll('th i').forEach(icon => icon.className = 'fas fa-sort');
+            const tsIcon = document.querySelector('th[data-sort="timestamp"] i');
+            if (tsIcon) tsIcon.className = 'fas fa-sort-down';
+            
+            fetchSensorData();
+        });
+    };
+
+    // ===== Setup theme toggle =====
+    const setupThemeToggle = () => {
+        const themeToggle = $('themeToggle');
+        if (!themeToggle) return;
+        
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    };
+
+    // ===== Initialize =====
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, initializing app');
+        setupPagination();
+        setupSorting();
+        setupFilters();
+        setupThemeToggle();
+        checkBackendConnection();
+        setInterval(checkBackendConnection, 10000);
+        fetchSensorData();
+        setInterval(fetchSensorData, 900000);
+    });
+</script>
+
+</body>
+</html>
